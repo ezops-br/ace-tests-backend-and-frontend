@@ -30,8 +30,8 @@ variable "desired_count" {
 }
 
 variable "assign_public_ip" {
-  type    = string
-  default = "DISABLED"
+  type    = bool
+  default = false
 }
 
 variable "execution_role_arn" {

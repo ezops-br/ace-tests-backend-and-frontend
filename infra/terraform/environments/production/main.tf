@@ -49,7 +49,7 @@ module "ecs_backend" {
   subnets            = var.subnets
   security_groups    = var.security_groups
   desired_count      = 2
-  assign_public_ip   = "DISABLED"
+  assign_public_ip   = false
   execution_role_arn = ""
 }
 
@@ -58,7 +58,7 @@ module "db" {
   engine            = "mysql"
   allocated_storage = 20
   instance_class    = "db.t3.micro"
-  name              = "ace_tests_db"
+  identifier        = "ace-tests-backend-db"
   username          = var.db_username
   password          = var.db_password
   publicly_accessible = false
