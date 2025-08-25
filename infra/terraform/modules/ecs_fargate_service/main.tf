@@ -1,20 +1,3 @@
-terraform {
-  required_providers {
-    aws = { source = "hashicorp/aws"; version = "~> 5.0" }
-  }
-  required_version = ">= 1.5.0"
-}
-
-variable "cluster_name" { type = string }
-variable "service_name" { type = string }
-variable "image" { type = string }
-variable "container_port" { type = number; default = 3000 }
-variable "subnets" { type = list(string) }
-variable "security_groups" { type = list(string); default = [] }
-variable "desired_count" { type = number; default = 2 }
-variable "assign_public_ip" { type = string; default = "DISABLED" }
-variable "execution_role_arn" { type = string; default = "" }
-
 resource "aws_ecs_cluster" "this" {
   name = var.cluster_name
 }
@@ -33,7 +16,7 @@ resource "aws_ecs_task_definition" "this" {
       name      = "app"
       image     = var.image
       essential = true
-      portMappings = [ { containerPort = var.container_port; hostPort = var.container_port; protocol = "tcp" } ]
+      portMappings = [ { containerPort = var.container_port, hostPort = var.container_port, protocol = "tcp" } ]
     }
   ])
 }
@@ -53,7 +36,3 @@ resource "aws_ecs_service" "this" {
 
   depends_on = [aws_ecs_task_definition.this]
 }
-
-output "service_name" { value = aws_ecs_service.this.name }
-output "task_definition_arn" { value = aws_ecs_task_definition.this.arn }
-output "cluster_id" { value = aws_ecs_cluster.this.id }

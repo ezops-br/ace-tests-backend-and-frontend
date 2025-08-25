@@ -1,15 +1,6 @@
-terraform {
-  required_providers {
-    aws = { source = "hashicorp/aws"; version = "~> 5.0" }
-  }
-  required_version = ">= 1.5.0"
+data "aws_vpc" "default" {
+  default = true
 }
-
-variable "load_balancer_name" { type = string }
-variable "subnets" { type = list(string) }
-variable "security_groups" { type = list(string); default = [] }
-
-data "aws_vpc" "default" { default = true }
 
 resource "aws_lb" "this" {
   name               = var.load_balancer_name
@@ -36,7 +27,3 @@ resource "aws_lb_listener" "http" {
     target_group_arn = aws_lb_target_group.this.arn
   }
 }
-
-output "alb_dns_name" { value = aws_lb.this.dns_name }
-output "alb_arn" { value = aws_lb.this.arn }
-output "alb_target_group_arn" { value = aws_lb_target_group.this.arn }
