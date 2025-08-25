@@ -1,1 +1,4 @@
-variable "alarm_name" { type = string; default = "HighCPUAlarm" }
+variable "alarm_name" {
+  type    = string
+  default = "HighCPUAlarm"
+}
