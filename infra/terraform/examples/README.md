@@ -1,0 +1,1 @@
+This folder contains example Terraform variable files and manifests to illustrate how to deploy the recommended architecture using the modular Terraform setup. Replace placeholder values with real AWS resource identifiers and credentials. The two-phase bootstrap pattern for Terraform remote state is referenced in the main deployment docs.
