@@ -13,7 +13,7 @@ variable "instance_class" {
   default = "db.t3.micro"
 }
 
-variable "name" {
+variable "identifier" {
   type    = string
   default = "appdb"
 }
