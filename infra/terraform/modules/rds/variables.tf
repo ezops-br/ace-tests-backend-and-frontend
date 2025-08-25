@@ -15,7 +15,7 @@ variable "instance_class" {
 
 variable "identifier" {
   type    = string
-  default = "appdb"
+  default = "ace-tests-backend-db"
 }
 
 variable "username" {

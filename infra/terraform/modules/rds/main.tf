@@ -9,5 +9,7 @@ resource "aws_db_instance" "this" {
   skip_final_snapshot  = true
   multi_az             = false
   parameter_group_name = "default.${var.engine}"
-  tags                 = { Name = var.identifier }
+  tags = {
+    Name = var.identifier
+  }
 }
