@@ -1,0 +1,96 @@
+name: Infra Terraform CI
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'infra/terraform/**'
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: 'Run terraform apply after plan (only allowed on manual dispatch)'
+        required: false
+        default: 'false'
+
+permissions:
+  contents: read
+
+jobs:
+  terraform-ci:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v1
+        with:
+          terraform_version: '1.5.0'
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Terraform fmt
+        run: terraform fmt -recursive
+        working-directory: infra/terraform
+
+      - name: Terraform init
+        run: terraform init -backend=false
+        working-directory: infra/terraform/environments/production
+
+      - name: Terraform validate
+        run: terraform validate
+        working-directory: infra/terraform/environments/production
+
+      - name: Terraform plan
+        id: plan
+        run: terraform plan -var-file=../examples/terraform.tfvars.json -out=plan.tfplan
+        working-directory: infra/terraform/environments/production
+
+      - name: Persist plan
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: tfplan
+          path: infra/terraform/environments/production/plan.tfplan
+
+  apply:
+    needs: terraform-ci
+    if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.apply == 'true' }}
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download plan
+        uses: actions/download-artifact@v3
+        with:
+          name: tfplan
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v1
+        with:
+          terraform_version: '1.5.0'
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Terraform apply
+        run: |
+          mkdir -p infra/terraform/environments/production
+          mv plan.tfplan infra/terraform/environments/production/plan.tfplan || true
+          cd infra/terraform/environments/production
+          terraform apply -auto-approve plan.tfplan
