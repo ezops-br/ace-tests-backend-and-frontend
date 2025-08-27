@@ -51,7 +51,7 @@ jobs:
 
       - name: Terraform plan
         id: plan
-        run: terraform plan -var-file=../examples/terraform.tfvars.json -out=plan.tfplan
+        run: terraform plan -var-file=../../examples/terraform.tfvars.json -out=plan.tfplan
         working-directory: infra/terraform/environments/production
 
       - name: Persist plan
