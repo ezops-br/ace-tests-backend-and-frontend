@@ -28,9 +28,9 @@ jobs:
         working-directory: infra/terraform/environments/production
         run: terraform validate
       - name: Terraform Plan
-        working_directory: infra/terraform/environments/production
+        working-directory: infra/terraform/environments/production
         run: terraform plan
       - name: Terraform Apply (if approved)
         if: github.event_name == 'push'
-        working_directory: infra/terraform/environments/production
+        working-directory: infra/terraform/environments/production
         run: terraform apply -auto-approve
