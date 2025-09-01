@@ -28,7 +28,7 @@ jobs:
         working-directory: infra/terraform/root
         run: terraform validate
       - name: Terraform Plan
-        working-directory: infra/terraform/root
+        working_directory: infra/terraform/root
         run: terraform plan
       - name: Terraform Apply (if approved)
         if: github.event_name == 'push'
