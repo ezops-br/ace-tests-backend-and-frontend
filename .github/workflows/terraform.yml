@@ -22,15 +22,15 @@ jobs:
         with:
           terraform_version: 1.5.0
       - name: Terraform Init
-        working-directory: infra/terraform/root
+        working-directory: infra/terraform/environments/production
         run: terraform init
       - name: Terraform Validate
-        working-directory: infra/terraform/root
+        working-directory: infra/terraform/environments/production
         run: terraform validate
       - name: Terraform Plan
-        working_directory: infra/terraform/root
+        working_directory: infra/terraform/environments/production
         run: terraform plan
       - name: Terraform Apply (if approved)
         if: github.event_name == 'push'
-        working-directory: infra/terraform/root
+        working_directory: infra/terraform/environments/production
         run: terraform apply -auto-approve
