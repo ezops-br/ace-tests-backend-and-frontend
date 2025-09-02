@@ -1,2 +1,21 @@
 node_modules
 .env
+
+# Terraform files
+*.tfstate
+*.tfstate.*
+*.tfvars.backup
+*.tfplan
+*.tfplan.*
+.terraform/
+crash.log
+crash.*.log
+# Ignore tfvars files with secrets, but allow non-sensitive ones
+# *.tfvars
+# !*.tfvars.example
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+terraform.rc
