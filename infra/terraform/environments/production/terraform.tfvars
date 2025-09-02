@@ -1,9 +1,9 @@
-aws_region = "us-east-1"
+aws_region = "<value>"
 
-subnets = ["subnet-PLACEHOLDER1", "subnet-PLACEHOLDER2"]
+subnets = ["<value>", "<value>"]
 
-security_groups = ["sg-PLACEHOLDER"]
+security_groups = ["<value>"]
 
-db_username = "dbadmin"
+db_username = "<value>"
 
-db_password = "YOUR_DB_PASSWORD"
+db_password = "<value>"
