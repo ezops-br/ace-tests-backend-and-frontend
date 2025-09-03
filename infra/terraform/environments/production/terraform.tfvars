@@ -7,6 +7,7 @@
 #     PowerShell (Windows):  $env:TF_VAR_db_password = "<secure-password>"
 #     Bash (Linux/macOS):    export TF_VAR_db_password="<secure-password>"
 
+project_name = "ace-tests-back-front"
 aws_region = "us-east-1"
 
 # Networking is now managed by the VPC module

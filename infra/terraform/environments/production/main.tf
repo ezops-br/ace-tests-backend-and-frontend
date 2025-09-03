@@ -1,3 +1,9 @@
+variable "project_name" {
+  type        = string
+  description = "Name of the project used for resource naming"
+  default     = "ace-tests-back-front"
+}
+
 variable "aws_region" {
   type    = string
   default = "us-east-1"
@@ -27,7 +33,7 @@ provider "aws" {
 module "vpc" {
   source = "../../modules/vpc"
 
-  name_prefix = "ace-tests-backend"
+  name_prefix = var.project_name
   vpc_cidr    = "10.0.0.0/16"
   availability_zones = ["us-east-1a", "us-east-1b"]
   public_subnet_cidrs  = ["10.0.1.0/24", "10.0.2.0/24"]
@@ -39,13 +45,13 @@ module "vpc" {
 
 module "ecr_backend" {
   source          = "../../modules/ecr"
-  repository_name = "ace-tests-backend"
-  tags            = { Environment = "production", App = "ace-tests-backend" }
+  repository_name = var.project_name
+  tags            = { Environment = "production", App = var.project_name }
 }
 
 module "alb" {
   source             = "../../modules/alb"
-  load_balancer_name = "ace-tests-backend-alb"
+  load_balancer_name = "${var.project_name}-alb"
   vpc_id             = module.vpc.vpc_id
   subnets            = module.vpc.public_subnet_ids
   security_groups    = [module.vpc.alb_security_group_id]
@@ -53,8 +59,8 @@ module "alb" {
 
 module "ecs_backend" {
   source             = "../../modules/ecs_fargate_service"
-  cluster_name       = "ace-tests-backend-cluster"
-  service_name       = "ace-tests-backend-service"
+  cluster_name       = "${var.project_name}-cluster"
+  service_name       = "${var.project_name}-service"
   image              = module.ecr_backend.repository_url
   container_port     = 3000
   subnets            = module.vpc.private_subnet_ids
@@ -69,7 +75,7 @@ module "db" {
   engine                    = "mysql"
   allocated_storage         = 20
   instance_class            = "db.t3.micro"
-  identifier                = "ace-tests-backend-db"
+  identifier                = "${var.project_name}-db"
   username                  = var.db_username
   password                  = var.db_password
   publicly_accessible       = false
@@ -79,7 +85,7 @@ module "db" {
 
 module "frontend_bucket" {
   source             = "../../modules/s3_site"
-  bucket_name        = "ace-tests-frontend-site-production"
+  bucket_name        = "${var.project_name}-frontend-site-production"
   enable_versioning  = true
   enable_encryption  = true
 }
