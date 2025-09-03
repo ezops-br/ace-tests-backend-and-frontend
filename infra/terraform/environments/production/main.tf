@@ -3,7 +3,7 @@ terraform {
     bucket         = "ace-tests-back-front-tfstate"
     key            = "production/terraform.tfstate"
     region         = "us-east-1"
-    profile = "ace-tests"
+    # profile = "ace-tests"
     use_lockfile   = true
     encrypt        = true
     
