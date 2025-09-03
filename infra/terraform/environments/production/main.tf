@@ -6,7 +6,6 @@ terraform {
     # profile = "ace-tests"
     use_lockfile   = true
     encrypt        = true
-    
   }
   required_providers {
     aws = {
