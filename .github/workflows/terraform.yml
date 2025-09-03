@@ -10,6 +10,12 @@ on:
     paths:
       - 'infra/terraform/**'
   workflow_dispatch:
+    inputs:
+      apply:
+        description: 'Apply Terraform changes'
+        required: false
+        default: false
+        type: boolean
 
 jobs:
   terraform:
@@ -53,6 +59,6 @@ jobs:
         working-directory: infra/terraform/environments/production
         run: terraform plan
       - name: Terraform Apply (if approved)
-        if: github.event_name == 'push'
+        if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.apply == 'true')
         working-directory: infra/terraform/environments/production
         run: terraform apply -auto-approve
