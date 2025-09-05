@@ -27,3 +27,17 @@ resource "aws_iam_role" "this" {
   name               = var.role_name
   tags               = var.tags
 }
+
+# Attach ECS Task Execution Role Policy
+resource "aws_iam_role_policy_attachment" "ecs_task_execution_role_policy" {
+  count      = var.service == "ecs" ? 1 : 0
+  role       = aws_iam_role.this.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+}
+
+# Attach ECS Full Access Policy (optional, for task role)
+resource "aws_iam_role_policy_attachment" "ecs_full_access_policy" {
+  count      = var.service == "ecs" && var.attach_task_role_policy ? 1 : 0
+  role       = aws_iam_role.this.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonECS_FullAccess"
+}
