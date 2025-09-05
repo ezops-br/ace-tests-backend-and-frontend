@@ -1,0 +1,13 @@
+{
+  "name": "ace-tests-playwright",
+  "version": "1.0.0",
+  "description": "Playwright tests for ACE Tests application",
+  "scripts": {
+    "test": "node test-playwright.js",
+    "test:headless": "HEADLESS=true node test-playwright.js",
+    "install-playwright": "npx playwright install chromium"
+  },
+  "devDependencies": {
+    "playwright": "^1.40.0"
+  }
+}

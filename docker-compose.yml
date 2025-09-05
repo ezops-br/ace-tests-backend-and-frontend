@@ -1,0 +1,79 @@
+version: '3.8'
+
+services:
+  # MySQL Database
+  mysql:
+    image: mysql:8.0
+    container_name: ace-tests-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: ace_tests
+      MYSQL_USER: app_user
+      MYSQL_PASSWORD: app_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./create_table.sql:/docker-entrypoint-initdb.d/create_table.sql
+    networks:
+      - ace-tests-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+  # Backend API
+  backend:
+    build: .
+    container_name: ace-tests-backend
+    environment:
+      DB_HOST: mysql
+      DB_USER: app_user
+      DB_PASSWORD: app_password
+      DB_NAME: ace_tests
+      PORT: 3000
+    ports:
+      - "3000:3000"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - ace-tests-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/messages"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Frontend
+  frontend:
+    build: ./frontend
+    container_name: ace-tests-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - ace-tests-network
+
+  # # Nginx Reverse Proxy (Optional - for production-like setup)
+  # nginx:
+  #   image: nginx:alpine
+  #   container_name: ace-tests-nginx
+  #   ports:
+  #     - "8080:80"
+  #   volumes:
+  #     - ./nginx.conf:/etc/nginx/nginx.conf
+  #   depends_on:
+  #     - backend
+  #     - frontend
+  #   networks:
+  #     - ace-tests-network
+
+volumes:
+  mysql_data:
+
+networks:
+  ace-tests-network:
+    driver: bridge

@@ -84,7 +84,7 @@ module "alb" {
 }
 
 module "ecs_backend" {
-  source             = "../../modules/ecs_fargate_service"
+  source             = "../../modules/ecs_service"
   cluster_name       = "${var.project_name}-cluster"
   service_name       = "${var.project_name}-service"
   image              = module.ecr_backend.repository_url
@@ -92,8 +92,14 @@ module "ecs_backend" {
   subnets            = module.vpc.private_subnet_ids
   security_groups    = [module.vpc.ecs_security_group_id]
   desired_count      = 2
-  assign_public_ip   = false
+  min_size           = 1
+  max_size           = 3
+  desired_capacity   = 2
+  instance_type      = "t3.medium"
+  cpu                = "256"
+  memory             = "512"
   execution_role_arn = module.ecs_execution_role.role_arn
+  target_group_arn   = module.alb.alb_target_group_arn
 }
 
 module "db" {
