@@ -62,9 +62,3 @@ jobs:
         if: github.event_name == 'workflow_dispatch' && github.event.inputs.apply == 'true'
         working-directory: infra/terraform/environments/production
         run: terraform apply -auto-approve
-      - name: Apply Skipped - Manual Approval Required
-        if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.apply != 'true')
-        run: |
-          echo "⚠️  Terraform Apply was skipped for security reasons."
-          echo "📋 To apply changes, manually trigger the workflow with 'Apply Terraform changes' set to 'true'"
-          echo "🔒 This prevents accidental infrastructure changes from push events"

@@ -67,6 +67,14 @@ module "ecr_backend" {
   tags            = { Environment = "production", App = var.project_name }
 }
 
+module "ecs_execution_role" {
+  source = "../../modules/iam"
+  
+  role_name = "${var.project_name}-ecs-execution-role"
+  service   = "ecs"
+  tags      = { Environment = "production", App = var.project_name }
+}
+
 module "alb" {
   source             = "../../modules/alb"
   load_balancer_name = "${var.project_name}-alb"
@@ -85,7 +93,7 @@ module "ecs_backend" {
   security_groups    = [module.vpc.ecs_security_group_id]
   desired_count      = 2
   assign_public_ip   = false
-  execution_role_arn = ""
+  execution_role_arn = module.ecs_execution_role.role_arn
 }
 
 module "db" {
@@ -116,4 +124,24 @@ module "frontend_cloudfront" {
 
 output "frontend_site_url" {
   value = module.frontend_cloudfront.distribution_domain_name
+}
+
+output "ecs_execution_role_arn" {
+  description = "ARN of the ECS execution role"
+  value       = module.ecs_execution_role.role_arn
+}
+
+output "ecs_execution_role_name" {
+  description = "Name of the ECS execution role"
+  value       = module.ecs_execution_role.role_name
+}
+
+output "ecs_task_execution_role_policy_arn" {
+  description = "ARN of the ECS Task Execution Role Policy"
+  value       = module.ecs_execution_role.ecs_task_execution_role_policy_arn
+}
+
+output "ecs_task_role_policy_arn" {
+  description = "ARN of the ECS Task Role Policy"
+  value       = module.ecs_execution_role.ecs_task_role_policy_arn
 }

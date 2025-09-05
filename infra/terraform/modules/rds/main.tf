@@ -20,11 +20,32 @@ resource "aws_db_instance" "this" {
   publicly_accessible     = var.publicly_accessible
   skip_final_snapshot     = true
   multi_az                = false
-  parameter_group_name    = "default.${var.engine}"
+  parameter_group_name    = aws_db_parameter_group.this.name
   vpc_security_group_ids  = var.vpc_security_group_ids
   db_subnet_group_name    = var.db_subnet_group_name != "" ? var.db_subnet_group_name : aws_db_subnet_group.this[0].name
 
   tags = {
     Name = var.identifier
+  }
+}
+
+# DB Parameter Group
+resource "aws_db_parameter_group" "this" {
+  family = var.engine == "mysql" ? "mysql8.0" : "postgres13"
+  name   = "${var.identifier}-parameter-group"
+
+  parameter {
+    name  = "max_connections"
+    value = "100"
+  }
+
+  parameter {
+    apply_method = "immediate"
+    name  = "innodb_buffer_pool_size"
+    value = "{DBInstanceClassMemory*3/4}"
+  }
+
+  tags = {
+    Name = "${var.identifier}-parameter-group"
   }
 }

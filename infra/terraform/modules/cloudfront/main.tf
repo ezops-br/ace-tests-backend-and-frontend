@@ -4,7 +4,7 @@ resource "aws_cloudfront_origin_access_identity" "oai" {
 
 resource "aws_cloudfront_distribution" "this" {
   enabled = true
-
+  
   origin {
     domain_name = var.origin_bucket_domain_name
     origin_id   = "s3-site-origin"
@@ -28,6 +28,13 @@ resource "aws_cloudfront_distribution" "this" {
     viewer_protocol_policy = "redirect-to-https"
     allowed_methods        = ["GET", "HEAD"]
     cached_methods         = ["GET", "HEAD"]
+
+    forwarded_values {
+      query_string = true
+      cookies {
+        forward = "all"
+      }
+    }
   }
 
   price_class = "PriceClass_All"
