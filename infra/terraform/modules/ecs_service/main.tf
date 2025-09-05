@@ -75,8 +75,7 @@ resource "aws_iam_role_policy_attachment" "ecs_instance_policy" {
 resource "aws_autoscaling_group" "ecs" {
   name                = "${var.cluster_name}-asg"
   vpc_zone_identifier = var.subnets
-  target_group_arns   = var.target_group_arn != "" ? [var.target_group_arn] : []
-  health_check_type   = "ELB"
+  health_check_type   = "EC2"
   health_check_grace_period = 300
 
   min_size         = var.min_size
@@ -127,12 +126,18 @@ resource "aws_ecs_service" "this" {
   desired_count   = var.desired_count
   launch_type     = "EC2"
 
+  # Ensure tasks are distributed across different instances
+  placement_constraints {
+    type       = "distinctInstance"
+  }
+
+  # Load balancer configuration for target group association
   dynamic "load_balancer" {
     for_each = var.target_group_arn != "" ? [1] : []
     content {
       target_group_arn = var.target_group_arn
       container_name   = "app"
-      container_port   = var.container_port
+      container_port   = 3000
     }
   }
 
