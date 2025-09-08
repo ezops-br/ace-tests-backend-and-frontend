@@ -2,6 +2,32 @@ resource "aws_ecs_cluster" "this" {
   name = var.cluster_name
 }
 
+# CloudWatch Log Group for ECS service
+resource "aws_cloudwatch_log_group" "ecs_service" {
+  name              = "/ecs/${var.service_name}"
+  retention_in_days = var.log_retention_days
+  tags = {
+    Name        = "${var.service_name}-logs"
+    Environment = var.environment
+    Service     = var.service_name
+  }
+}
+
+# SSM Parameter for database password
+resource "aws_ssm_parameter" "db_password" {
+  count = var.db_password != "" ? 1 : 0
+  
+  name  = "/${var.service_name}/database/password"
+  type  = "SecureString"
+  value = var.db_password
+  
+  tags = {
+    Name        = "${var.service_name}-db-password"
+    Environment = var.environment
+    Service     = var.service_name
+  }
+}
+
 # ECS-optimized AMI data source
 data "aws_ami" "ecs_optimized" {
   most_recent = true
@@ -71,6 +97,31 @@ resource "aws_iam_role_policy_attachment" "ecs_instance_policy" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role"
 }
 
+# IAM policy for SSM parameter access
+resource "aws_iam_role_policy" "ssm_parameter_access" {
+  count = var.db_password != "" ? 1 : 0
+  
+  name = "${var.cluster_name}-ssm-parameter-access"
+  role = aws_iam_role.ecs_instance_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "ssm:GetParameter",
+          "ssm:GetParameters",
+          "ssm:GetParametersByPath"
+        ]
+        Resource = [
+          "arn:aws:ssm:${var.aws_region}:*:parameter/${var.service_name}/database/*"
+        ]
+      }
+    ]
+  })
+}
+
 # Auto Scaling Group for ECS instances
 resource "aws_autoscaling_group" "ecs" {
   name                = "${var.cluster_name}-asg"
@@ -114,7 +165,43 @@ resource "aws_ecs_task_definition" "this" {
           hostPort = 0, 
           protocol = "tcp" 
         } 
-      ]
+      ],
+      environment = [
+        {
+          name  = "DB_HOST"
+          value = var.db_host
+        },
+        {
+          name  = "DB_PORT"
+          value = tostring(var.db_port)
+        },
+        {
+          name  = "DB_NAME"
+          value = var.db_name
+        },
+        {
+          name  = "DB_USERNAME"
+          value = var.db_username
+        },
+        {
+          name  = "DB_ENGINE"
+          value = var.db_engine
+        }
+      ],
+      secrets = [
+        {
+          name      = "DB_PASSWORD"
+          valueFrom = var.db_password != "" ? aws_ssm_parameter.db_password[0].arn : ""
+        }
+      ],
+      logConfiguration = {
+        logDriver = "awslogs",
+        options = {
+          "awslogs-group"         = aws_cloudwatch_log_group.ecs_service.name,
+          "awslogs-region"        = var.aws_region,
+          "awslogs-stream-prefix" = "ecs"
+        }
+      }
     }
   ])
 }
@@ -142,4 +229,15 @@ resource "aws_ecs_service" "this" {
   }
 
   depends_on = [aws_ecs_task_definition.this, aws_autoscaling_group.ecs]
+}
+
+# Output the log group ARN for reference
+output "log_group_arn" {
+  description = "ARN of the CloudWatch log group for the ECS service"
+  value       = aws_cloudwatch_log_group.ecs_service.arn
+}
+
+output "log_group_name" {
+  description = "Name of the CloudWatch log group for the ECS service"
+  value       = aws_cloudwatch_log_group.ecs_service.name
 }

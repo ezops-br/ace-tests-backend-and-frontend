@@ -91,7 +91,7 @@ module "ecs_backend" {
   container_port     = 3000
   subnets            = module.vpc.private_subnet_ids
   security_groups    = [module.vpc.ecs_security_group_id]
-  desired_count      = 2
+  desired_count      = 1
   min_size           = 1
   max_size           = 3
   desired_capacity   = 2
@@ -100,6 +100,17 @@ module "ecs_backend" {
   memory             = "512"
   execution_role_arn = module.ecs_execution_role.role_arn
   target_group_arn   = module.alb.alb_target_group_arn
+  aws_region         = var.aws_region
+  log_retention_days = 14
+  environment        = "production"
+  
+  # Database environment variables
+  db_host     = module.db.endpoint
+  db_port     = 3306
+  db_name     = module.db.db_name
+  db_username = module.db.username
+  db_password = var.db_password
+  db_engine   = module.db.engine
 }
 
 module "db" {
@@ -108,6 +119,7 @@ module "db" {
   allocated_storage         = 20
   instance_class            = "db.t3.micro"
   identifier                = "${var.project_name}-db"
+  db_name                   = "ace_tests_production"
   username                  = var.db_username
   password                  = var.db_password
   publicly_accessible       = false
@@ -150,4 +162,29 @@ output "ecs_task_execution_role_policy_arn" {
 output "ecs_task_role_policy_arn" {
   description = "ARN of the ECS Task Role Policy"
   value       = module.ecs_execution_role.ecs_task_role_policy_arn
+}
+
+output "ecs_log_group_arn" {
+  description = "ARN of the CloudWatch log group for ECS service"
+  value       = module.ecs_backend.log_group_arn
+}
+
+output "ecs_log_group_name" {
+  description = "Name of the CloudWatch log group for ECS service"
+  value       = module.ecs_backend.log_group_name
+}
+
+output "database_endpoint" {
+  description = "Database endpoint"
+  value       = module.db.endpoint
+}
+
+output "database_identifier" {
+  description = "Database identifier"
+  value       = module.db.identifier
+}
+
+output "database_name" {
+  description = "Database name"
+  value       = module.db.db_name
 }

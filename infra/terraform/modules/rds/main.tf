@@ -15,6 +15,7 @@ resource "aws_db_instance" "this" {
   engine                  = var.engine
   instance_class          = var.instance_class
   identifier              = var.identifier
+  db_name                 = var.db_name
   username                = var.username
   password                = var.password
   publicly_accessible     = var.publicly_accessible

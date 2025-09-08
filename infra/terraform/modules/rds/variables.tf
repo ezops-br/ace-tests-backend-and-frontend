@@ -50,3 +50,9 @@ variable "subnet_ids" {
   type        = list(string)
   default     = []
 }
+
+variable "db_name" {
+  description = "Name of the initial database to create"
+  type        = string
+  default     = "ace_tests_db"
+}
