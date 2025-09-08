@@ -73,6 +73,11 @@ module "ecs_execution_role" {
   role_name = "${var.project_name}-ecs-execution-role"
   service   = "ecs"
   tags      = { Environment = "production", App = var.project_name }
+  
+  # Enable SSM parameter access for database password
+  enable_ssm_parameter_access = true
+  ssm_parameter_paths         = ["/${var.project_name}-service/database/*"]
+  aws_region                  = var.aws_region
 }
 
 module "alb" {

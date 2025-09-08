@@ -97,30 +97,6 @@ resource "aws_iam_role_policy_attachment" "ecs_instance_policy" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role"
 }
 
-# IAM policy for SSM parameter access
-resource "aws_iam_role_policy" "ssm_parameter_access" {
-  count = var.db_password != "" ? 1 : 0
-  
-  name = "${var.cluster_name}-ssm-parameter-access"
-  role = aws_iam_role.ecs_instance_role.id
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Action = [
-          "ssm:GetParameter",
-          "ssm:GetParameters",
-          "ssm:GetParametersByPath"
-        ]
-        Resource = [
-          "arn:aws:ssm:${var.aws_region}:*:parameter/${var.service_name}/database/*"
-        ]
-      }
-    ]
-  })
-}
 
 # Auto Scaling Group for ECS instances
 resource "aws_autoscaling_group" "ecs" {
