@@ -156,7 +156,7 @@ resource "aws_ecs_task_definition" "this" {
           value = var.db_name
         },
         {
-          name  = "DB_USERNAME"
+          name  = "DB_USER"
           value = var.db_username
         },
         {
