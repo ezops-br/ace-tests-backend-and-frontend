@@ -15,6 +15,36 @@ const pool = mysql.createPool({
   queueLimit: 0
 });
 
+// Database initialization function
+async function initializeDatabase() {
+  try {
+    console.log('Initializing database...');
+    
+    // Create database if it doesn't exist
+    await pool.execute(`CREATE DATABASE IF NOT EXISTS ${process.env.DB_NAME || 'ace_tests'}`);
+    console.log(`Database ${process.env.DB_NAME || 'ace_tests'} is ready`);
+    
+    // Use the database
+    await pool.execute(`USE ${process.env.DB_NAME || 'ace_tests'}`);
+    
+    // Create messages table if it doesn't exist
+    await pool.execute(`
+      CREATE TABLE IF NOT EXISTS messages (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        content TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    console.log('Messages table is ready');
+    
+    console.log('Database initialization completed successfully');
+  } catch (error) {
+    console.error('Database initialization failed:', error);
+    // Don't exit the process, let the app continue
+    // The health check will catch database issues
+  }
+}
+
 // POST /messages - record a message
 app.post('/messages', async (req, res) => {
   const { content } = req.body;
@@ -55,5 +85,35 @@ app.get('/messages/:id', async (req, res) => {
   }
 });
 
+// Health check endpoint
+app.get('/health', async (req, res) => {
+  try {
+    // Test database connection
+    await pool.execute('SELECT 1');
+    res.json({ status: 'healthy', database: 'connected' });
+  } catch (err) {
+    console.error('Health check failed:', err);
+    res.status(503).json({ status: 'unhealthy', database: 'disconnected' });
+  }
+});
+
 const port = process.env.PORT || 3000;
-app.listen(port, () => console.log(`Server listening on port ${port}`));
+
+// Initialize database and start server
+async function startServer() {
+  try {
+    // Initialize database first
+    await initializeDatabase();
+    
+    // Start the server
+    app.listen(port, () => {
+      console.log(`Server listening on port ${port}`);
+      console.log('Database initialization completed');
+    });
+  } catch (error) {
+    console.error('Failed to start server:', error);
+    process.exit(1);
+  }
+}
+
+startServer();

@@ -11,6 +11,9 @@ COPY package*.json ./
 # Install only production dependencies to keep the image small
 RUN npm install --production --silent
 
+# Install curl for health checks
+RUN apk add --no-cache curl
+
 # Bundle app source
 COPY . .
 
