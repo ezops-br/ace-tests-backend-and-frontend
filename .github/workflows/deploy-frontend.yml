@@ -1,0 +1,119 @@
+name: Deploy Frontend to S3 and CloudFront
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'frontend/**'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'frontend/**'
+  workflow_dispatch:
+
+env:
+  AWS_REGION: us-east-1
+  PROJECT_NAME: ace-tests-back-front
+  GITHUB_REPOSITORY: ${{ github.repository }}
+
+jobs:
+  deploy-frontend:
+    name: Deploy Frontend
+    runs-on: ubuntu-latest
+    environment: production
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Get deployment parameters from Parameter Store
+      id: get-parameters
+      run: |
+        echo "Retrieving deployment parameters from Parameter Store..."
+        
+        # Get S3 bucket name
+        S3_BUCKET=$(aws ssm get-parameter --name "/${{ env.PROJECT_NAME }}/frontend/s3-bucket" --query 'Parameter.Value' --output text)
+        echo "S3_BUCKET=$S3_BUCKET" >> $GITHUB_OUTPUT
+        
+        # Get CloudFront distribution ID
+        CLOUDFRONT_DISTRIBUTION_ID=$(aws ssm get-parameter --name "/${{ env.PROJECT_NAME }}/frontend/cloudfront-distribution-id" --query 'Parameter.Value' --output text)
+        echo "CLOUDFRONT_DISTRIBUTION_ID=$CLOUDFRONT_DISTRIBUTION_ID" >> $GITHUB_OUTPUT
+        
+        # Get CloudFront URL
+        CLOUDFRONT_URL=$(aws ssm get-parameter --name "/${{ env.PROJECT_NAME }}/frontend/cloudfront-url" --query 'Parameter.Value' --output text)
+        echo "CLOUDFRONT_URL=$CLOUDFRONT_URL" >> $GITHUB_OUTPUT
+        
+        echo "✅ Parameters retrieved successfully"
+        echo "S3 Bucket: $S3_BUCKET"
+        echo "CloudFront Distribution ID: $CLOUDFRONT_DISTRIBUTION_ID"
+        echo "CloudFront URL: $CLOUDFRONT_URL"
+
+    - name: Sync files to S3
+      run: |
+        echo "Uploading frontend files to S3..."
+        aws s3 sync frontend/ s3://${{ steps.get-parameters.outputs.S3_BUCKET }}/ \
+          --delete \
+          --cache-control "public, max-age=31536000" \
+          --exclude "*.html" \
+          --exclude "Dockerfile" \
+          --exclude "README.md" \
+          --exclude "LICENSE" \
+          --exclude "infra/**"
+        
+        # Upload HTML files with shorter cache time
+        aws s3 sync frontend/ s3://${{ steps.get-parameters.outputs.S3_BUCKET }}/ \
+          --delete \
+          --cache-control "public, max-age=0, must-revalidate" \
+          --include "*.html"
+        
+        echo "✅ Files uploaded to S3 successfully"
+
+    - name: Set correct content types
+      run: |
+        echo "Setting correct content types for static assets..."
+        
+        # Set CSS content type
+        aws s3 cp s3://${{ steps.get-parameters.outputs.S3_BUCKET }}/css/styles.css s3://${{ steps.get-parameters.outputs.S3_BUCKET }}/css/styles.css \
+          --content-type "text/css" \
+          --cache-control "public, max-age=31536000"
+        
+        # Set image content types
+        aws s3 cp s3://${{ steps.get-parameters.outputs.S3_BUCKET }}/images/logo.png s3://${{ steps.get-parameters.outputs.S3_BUCKET }}/images/logo.png \
+          --content-type "image/png" \
+          --cache-control "public, max-age=31536000"
+        
+        # Set HTML content type
+        aws s3 cp s3://${{ steps.get-parameters.outputs.S3_BUCKET }}/index.html s3://${{ steps.get-parameters.outputs.S3_BUCKET }}/index.html \
+          --content-type "text/html; charset=utf-8" \
+          --cache-control "public, max-age=0, must-revalidate"
+        
+        echo "✅ Content types set successfully"
+
+    - name: Invalidate CloudFront cache
+      if: steps.get-parameters.outputs.CLOUDFRONT_DISTRIBUTION_ID != ''
+      run: |
+        echo "Invalidating CloudFront cache..."
+        aws cloudfront create-invalidation \
+          --distribution-id ${{ steps.get-parameters.outputs.CLOUDFRONT_DISTRIBUTION_ID }} \
+          --paths "/*"
+        echo "✅ CloudFront cache invalidation initiated"
+
+    - name: Display deployment information
+      run: |
+        echo "✅ Frontend deployment completed successfully!"
+        echo "📦 S3 Bucket: ${{ steps.get-parameters.outputs.S3_BUCKET }}"
+        echo "🌍 Region: ${{ env.AWS_REGION }}"
+        if [ -n "${{ steps.get-parameters.outputs.CLOUDFRONT_DISTRIBUTION_ID }}" ]; then
+          echo "☁️  CloudFront Distribution: ${{ steps.get-parameters.outputs.CLOUDFRONT_DISTRIBUTION_ID }}"
+          echo "🌐 Frontend URL: https://${{ steps.get-parameters.outputs.CLOUDFRONT_URL }}"
+        else
+          echo "⚠️  CloudFront distribution ID not available"
+          echo "🌐 Frontend URL: https://${{ steps.get-parameters.outputs.S3_BUCKET }}.s3-website-${{ env.AWS_REGION }}.amazonaws.com"
+        fi
+
