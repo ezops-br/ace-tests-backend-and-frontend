@@ -24,9 +24,6 @@ async function initializeDatabase() {
     await pool.execute(`CREATE DATABASE IF NOT EXISTS ${process.env.DB_NAME || 'ace_tests'}`);
     console.log(`Database ${process.env.DB_NAME || 'ace_tests'} is ready`);
     
-    // Use the database
-    await pool.execute(`USE ${process.env.DB_NAME || 'ace_tests'}`);
-    
     // Create messages table if it doesn't exist
     await pool.execute(`
       CREATE TABLE IF NOT EXISTS messages (
