@@ -51,6 +51,11 @@ variable "github_repository" {
   type        = string
   description = "GitHub repository in format owner/repo (e.g., username/ace-tests-backend-and-frontend)"
   default     = "your-username/ace-tests-backend-and-frontend"
+  
+  validation {
+    condition     = can(regex("^[a-zA-Z0-9_-]+/[a-zA-Z0-9_.-]+$", var.github_repository))
+    error_message = "GitHub repository must be in format 'owner/repo'."
+  }
 }
 
 # VPC Module
@@ -235,7 +240,7 @@ module "frontend_cloudfront" {
 
 # Update S3 bucket policy with CloudFront distribution ARN
 resource "aws_s3_bucket_policy" "frontend_bucket_policy" {
-  bucket = module.frontend_bucket.bucket_arn
+  bucket = module.frontend_bucket.bucket_name
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [

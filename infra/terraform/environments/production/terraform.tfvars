@@ -9,6 +9,7 @@
 
 project_name = "ace-tests-back-front"
 aws_region = "us-east-1"
+github_repository = "ezops-br/ace-tests-backend-and-frontend"
 
 # Networking is now managed by the VPC module
 # No need to specify subnets or security groups manually
