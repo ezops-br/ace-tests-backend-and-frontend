@@ -21,6 +21,9 @@ jobs:
     name: Deploy Frontend
     runs-on: ubuntu-latest
     environment: production
+    permissions:
+      id-token: write
+      contents: read
     
     steps:
     - name: Checkout code
@@ -31,6 +34,7 @@ jobs:
       with:
         role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
         aws-region: us-east-1
+        audience: sts.amazonaws.com
 
     - name: Get deployment parameters from Parameter Store
       id: get-parameters
