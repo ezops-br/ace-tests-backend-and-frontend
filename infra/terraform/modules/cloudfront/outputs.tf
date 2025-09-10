@@ -10,6 +10,10 @@ output "distribution_arn" {
   value = aws_cloudfront_distribution.this.arn
 }
 
+output "distribution_hosted_zone_id" {
+  value = aws_cloudfront_distribution.this.hosted_zone_id
+}
+
 output "origin_access_identity_arn" {
   value = aws_cloudfront_origin_access_identity.oai.iam_arn
 }

@@ -340,3 +340,105 @@ output "frontend_parameter_names" {
     cloudfront_url             = module.frontend_parameters.frontend_cloudfront_url_parameter_name
   }
 }
+
+# Route53 Hosted Zone for ace-tests-front.ezopscloud.co (delegated subdomain)
+resource "aws_route53_zone" "ace_tests_front" {
+  name = "ace-tests-front.ezopscloud.co"
+  
+  tags = {
+    Name        = "ace-tests-front.ezopscloud.co"
+    Environment = "production"
+    Project     = var.project_name
+  }
+}
+
+# Data source to get the existing ezopscloud.co hosted zone
+data "aws_route53_zone" "ezopscloud" {
+  name = "ezopscloud.co"
+}
+
+# NS record in parent zone to delegate ace-tests-front.ezopscloud.co
+resource "aws_route53_record" "ace_tests_front_ns" {
+  zone_id = data.aws_route53_zone.ezopscloud.zone_id
+  name    = "ace-tests-front.ezopscloud.co"
+  type    = "NS"
+  ttl     = 300
+  records = aws_route53_zone.ace_tests_front.name_servers
+}
+
+# DNS Record pointing to CloudFront in the delegated zone
+resource "aws_route53_record" "ace_tests_front" {
+  zone_id = aws_route53_zone.ace_tests_front.zone_id
+  name    = "ace-tests-front.ezopscloud.co"
+  type    = "A"
+
+  alias {
+    name                   = module.frontend_cloudfront.distribution_domain_name
+    zone_id                = module.frontend_cloudfront.distribution_hosted_zone_id
+    evaluate_target_health = false
+  }
+}
+
+# Route53 Hosted Zone for ace-tests-back.ezopscloud.co (delegated subdomain)
+resource "aws_route53_zone" "ace_tests_back" {
+  name = "ace-tests-back.ezopscloud.co"
+  
+  tags = {
+    Name        = "ace-tests-back.ezopscloud.co"
+    Environment = "production"
+    Project     = var.project_name
+  }
+}
+
+# NS record in parent zone to delegate ace-tests-back.ezopscloud.co
+resource "aws_route53_record" "ace_tests_back_ns" {
+  zone_id = data.aws_route53_zone.ezopscloud.zone_id
+  name    = "ace-tests-back.ezopscloud.co"
+  type    = "NS"
+  ttl     = 300
+  records = aws_route53_zone.ace_tests_back.name_servers
+}
+
+# DNS Record pointing to ECS Load Balancer in the delegated zone
+resource "aws_route53_record" "ace_tests_back" {
+  zone_id = aws_route53_zone.ace_tests_back.zone_id
+  name    = "ace-tests-back.ezopscloud.co"
+  type    = "A"
+
+  alias {
+    name                   = module.alb.alb_dns_name
+    zone_id                = module.alb.alb_zone_id
+    evaluate_target_health = true
+  }
+}
+
+# Output the hosted zone information
+output "frontend_hosted_zone_id" {
+  description = "Route53 hosted zone ID for ace-tests-front.ezopscloud.co"
+  value = aws_route53_zone.ace_tests_front.zone_id
+}
+
+output "frontend_name_servers" {
+  description = "Name servers for ace-tests-front.ezopscloud.co"
+  value = aws_route53_zone.ace_tests_front.name_servers
+}
+
+output "frontend_domain" {
+  description = "Frontend domain name"
+  value = "ace-tests-front.ezopscloud.co"
+}
+
+output "backend_hosted_zone_id" {
+  description = "Route53 hosted zone ID for ace-tests-back.ezopscloud.co"
+  value = aws_route53_zone.ace_tests_back.zone_id
+}
+
+output "backend_name_servers" {
+  description = "Name servers for ace-tests-back.ezopscloud.co"
+  value = aws_route53_zone.ace_tests_back.name_servers
+}
+
+output "backend_domain" {
+  description = "Backend domain name"
+  value = "ace-tests-back.ezopscloud.co"
+}
