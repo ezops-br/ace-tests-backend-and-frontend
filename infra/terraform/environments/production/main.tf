@@ -238,25 +238,20 @@ module "frontend_cloudfront" {
   alternative_domain_names  = []
 }
 
-# Update S3 bucket policy with CloudFront distribution ARN
+# Update S3 bucket policy with CloudFront Origin Access Identity
 resource "aws_s3_bucket_policy" "frontend_bucket_policy" {
   bucket = module.frontend_bucket.bucket_name
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
       {
-        Sid       = "AllowCloudFrontServicePrincipal"
+        Sid       = "AllowCloudFrontOriginAccessIdentity"
         Effect    = "Allow"
         Principal = {
-          Service = "cloudfront.amazonaws.com"
+          AWS = module.frontend_cloudfront.origin_access_identity_arn
         }
         Action   = "s3:GetObject"
         Resource = "${module.frontend_bucket.bucket_arn}/*"
-        Condition = {
-          StringEquals = {
-            "AWS:SourceArn" = module.frontend_cloudfront.distribution_arn
-          }
-        }
       }
     ]
   })
