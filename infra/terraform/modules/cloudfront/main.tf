@@ -4,6 +4,7 @@ resource "aws_cloudfront_origin_access_identity" "oai" {
 
 resource "aws_cloudfront_distribution" "this" {
   enabled = true
+  aliases = var.alternative_domain_names
   
   origin {
     domain_name = var.origin_bucket_domain_name
@@ -39,5 +40,10 @@ resource "aws_cloudfront_distribution" "this" {
 
   price_class = "PriceClass_All"
 
-  viewer_certificate { cloudfront_default_certificate = true }
+  viewer_certificate {
+    cloudfront_default_certificate = var.certificate_arn == null
+    acm_certificate_arn           = var.certificate_arn
+    ssl_support_method            = var.certificate_arn != null ? "sni-only" : null
+    minimum_protocol_version      = var.certificate_arn != null ? "TLSv1.2_2021" : null
+  }
 }

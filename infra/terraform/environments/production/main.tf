@@ -193,7 +193,7 @@ module "ecs_backend" {
   min_size           = 1
   max_size           = 3
   desired_capacity   = 2
-  instance_type      = "t3.medium"
+  instance_type      = "t3.small"
   cpu                = "256"
   memory             = "512"
   execution_role_arn = module.ecs_execution_role.role_arn
@@ -232,10 +232,17 @@ module "frontend_bucket" {
   enable_encryption  = true
 }
 
+# Data source to get the existing wildcard certificate
+data "aws_acm_certificate" "wildcard_ezopscloud" {
+  domain   = "*.ezopscloud.co"
+  statuses = ["ISSUED"]
+}
+
 module "frontend_cloudfront" {
   source                    = "../../modules/cloudfront"
   origin_bucket_domain_name = module.frontend_bucket.bucket_domain_name
-  alternative_domain_names  = []
+  alternative_domain_names  = ["ace-tests-front.ezopscloud.co"]
+  certificate_arn          = data.aws_acm_certificate.wildcard_ezopscloud.arn
 }
 
 # Update S3 bucket policy with CloudFront Origin Access Identity
